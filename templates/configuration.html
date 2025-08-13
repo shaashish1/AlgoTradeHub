@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - AlgoTrading</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-line me-2"></i>AlgoTrading
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                <a class="nav-link" href="{{ url_for('backtest_page') }}">Backtest</a>
+                <a class="nav-link" href="{{ url_for('realtime_page') }}">Real-time</a>
+                <a class="nav-link active" href="{{ url_for('config_page') }}">Configuration</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2>Configuration</h2>
+            </div>
+        </div>
+
+        <!-- Exchange Configuration -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-exchange-alt me-2"></i>Exchange Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="exchangeForm">
+                            <div class="mb-3">
+                                <label for="exchangeSelect" class="form-label">Select Exchanges</label>
+                                <select class="form-select" id="exchangeSelect" multiple>
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple exchanges</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Demo Mode</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="demoMode" checked>
+                                    <label class="form-check-label" for="demoMode">
+                                        Enable Demo Mode (Sandbox Trading)
+                                    </label>
+                                </div>
+                                <div class="form-text">Demo mode uses paper trading for safe testing</div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Exchange Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-coins me-2"></i>Trading Pairs</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="tradingPairsForm">
+                            <div class="mb-3">
+                                <label for="usdtPairs" class="form-label">USDT Trading Pairs</label>
+                                <select class="form-select" id="usdtPairs" multiple size="10">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple pairs</div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Trading Pairs</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Configuration -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-brain me-2"></i>Trading Strategies</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="strategyForm">
+                            <div class="mb-3">
+                                <label for="strategySelect" class="form-label">Select Strategies</label>
+                                <select class="form-select" id="strategySelect" multiple size="8">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple strategies</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="riskPerTrade" class="form-label">Risk per Trade (%)</label>
+                                <input type="number" class="form-control" id="riskPerTrade" min="0.1" max="10" step="0.1" value="2">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="maxPositions" class="form-label">Maximum Positions</label>
+                                <input type="number" class="form-control" id="maxPositions" min="1" max="20" value="5">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Save Strategy Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key me-2"></i>API Credentials</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            API credentials are stored securely and encrypted. Only enter credentials for exchanges you want to use for live trading.
+                        </div>
+                        
+                        <form id="credentialsForm">
+                            <div class="mb-3">
+                                <label for="credentialsExchange" class="form-label">Exchange</label>
+                                <select class="form-select" id="credentialsExchange">
+                                    <option value="binance">Binance</option>
+                                    <option value="kraken">Kraken</option>
+                                    <option value="coinbase">Coinbase Pro</option>
+                                    <option value="bybit">Bybit</option>
+                                    <option value="okx">OKX</option>
+                                    <option value="kucoin">KuCoin</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="apiKey" class="form-label">API Key</label>
+                                <input type="password" class="form-control" id="apiKey" placeholder="Enter API Key">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="apiSecret" class="form-label">API Secret</label>
+                                <input type="password" class="form-control" id="apiSecret" placeholder="Enter API Secret">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="apiPassphrase" class="form-label">API Passphrase (if required)</label>
+                                <input type="password" class="form-control" id="apiPassphrase" placeholder="Enter API Passphrase">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success">Save Credentials</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Configuration Display -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog me-2"></i>Current Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Active Exchanges</h6>
+                                <ul id="activeExchanges" class="list-unstyled">
+                                    <!-- Will be populated by JavaScript -->
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Trading Pairs</h6>
+                                <ul id="activePairs" class="list-unstyled">
+                                    <!-- Will be populated by JavaScript -->
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Strategy</h6>
+                                <div id="activeStrategy">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Configuration page specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfigurationData();
+            
+            // Exchange form submission
+            document.getElementById('exchangeForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const selectedExchanges = Array.from(document.getElementById('exchangeSelect').selectedOptions)
+                    .map(option => option.value);
+                const demoMode = document.getElementById('demoMode').checked;
+                
+                try {
+                    const response = await fetch('/api/update_exchange_config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            exchange_ids: selectedExchanges,
+                            demo_mode: demoMode
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        showToast('Exchange settings saved successfully!', 'success');
+                        loadConfigurationData();
+                    } else {
+                        showToast('Error saving exchange settings', 'error');
+                    }
+                } catch (error) {
+                    showToast('Error saving exchange settings', 'error');
+                }
+            });
+            
+            // Trading pairs form submission
+            document.getElementById('tradingPairsForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const selectedPairs = Array.from(document.getElementById('usdtPairs').selectedOptions)
+                    .map(option => option.value);
+                
+                try {
+                    const response = await fetch('/api/update_trading_pairs_config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            pair_ids: selectedPairs
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        showToast('Trading pairs saved successfully!', 'success');
+                        loadConfigurationData();
+                    } else {
+                        showToast('Error saving trading pairs', 'error');
+                    }
+                } catch (error) {
+                    showToast('Error saving trading pairs', 'error');
+                }
+            });
+            
+            // Strategy form submission
+            document.getElementById('strategyForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const selectedStrategies = Array.from(document.getElementById('strategySelect').selectedOptions)
+                    .map(option => option.value);
+                const riskPerTrade = parseFloat(document.getElementById('riskPerTrade').value);
+                const maxPositions = parseInt(document.getElementById('maxPositions').value);
+                
+                try {
+                    const response = await fetch('/api/update_strategy_config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            strategy_ids: selectedStrategies,
+                            risk_per_trade: riskPerTrade / 100,
+                            max_positions: maxPositions
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        showToast('Strategy settings saved successfully!', 'success');
+                        loadConfigurationData();
+                    } else {
+                        showToast('Error saving strategy settings', 'error');
+                    }
+                } catch (error) {
+                    showToast('Error saving strategy settings', 'error');
+                }
+            });
+            
+            // Credentials form submission
+            document.getElementById('credentialsForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const exchange = document.getElementById('credentialsExchange').value;
+                const apiKey = document.getElementById('apiKey').value;
+                const apiSecret = document.getElementById('apiSecret').value;
+                const apiPassphrase = document.getElementById('apiPassphrase').value;
+                
+                if (!apiKey || !apiSecret) {
+                    showToast('Please enter both API key and secret', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/update_config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            type: 'credentials',
+                            exchange: exchange,
+                            api_key: apiKey,
+                            api_secret: apiSecret,
+                            api_passphrase: apiPassphrase
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        showToast('Credentials saved successfully!', 'success');
+                        // Clear form fields
+                        document.getElementById('apiKey').value = '';
+                        document.getElementById('apiSecret').value = '';
+                        document.getElementById('apiPassphrase').value = '';
+                    } else {
+                        showToast('Error saving credentials', 'error');
+                    }
+                } catch (error) {
+                    showToast('Error saving credentials', 'error');
+                }
+            });
+        });
+        
+        async function loadConfigurationData() {
+            try {
+                // Load exchanges
+                const exchangesResponse = await fetch('/api/get_exchanges');
+                const exchanges = await exchangesResponse.json();
+                
+                const exchangeSelect = document.getElementById('exchangeSelect');
+                exchangeSelect.innerHTML = '';
+                exchanges.forEach(exchange => {
+                    const option = document.createElement('option');
+                    option.value = exchange.id;
+                    option.textContent = exchange.display_name;
+                    exchangeSelect.appendChild(option);
+                });
+                
+                // Load trading pairs
+                const pairsResponse = await fetch('/api/get_trading_pairs');
+                const pairs = await pairsResponse.json();
+                
+                const pairsSelect = document.getElementById('usdtPairs');
+                pairsSelect.innerHTML = '';
+                pairs.forEach(pair => {
+                    const option = document.createElement('option');
+                    option.value = pair.id;
+                    option.textContent = pair.symbol;
+                    pairsSelect.appendChild(option);
+                });
+                
+                // Load strategies
+                const strategiesResponse = await fetch('/api/get_strategies');
+                const strategies = await strategiesResponse.json();
+                
+                const strategySelect = document.getElementById('strategySelect');
+                strategySelect.innerHTML = '';
+                strategies.forEach(strategy => {
+                    const option = document.createElement('option');
+                    option.value = strategy.id;
+                    option.textContent = strategy.display_name;
+                    option.title = strategy.description;
+                    strategySelect.appendChild(option);
+                });
+                
+                // Update current configuration display
+                updateConfigDisplay(exchanges, pairs, strategies);
+                
+            } catch (error) {
+                console.error('Error loading configuration data:', error);
+                showToast('Error loading configuration data', 'error');
+            }
+        }
+        
+        function updateConfigDisplay(exchanges, pairs, strategies) {
+            // Update active exchanges
+            const activeExchanges = document.getElementById('activeExchanges');
+            activeExchanges.innerHTML = '';
+            
+            const activeExchangeList = exchanges.filter(e => e.active);
+            if (activeExchangeList.length > 0) {
+                activeExchangeList.forEach(exchange => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-exchange-alt text-success me-2"></i>${exchange.display_name}`;
+                    activeExchanges.appendChild(li);
+                });
+            } else {
+                activeExchanges.innerHTML = '<li class="text-muted">No exchanges configured</li>';
+            }
+            
+            // Update active trading pairs
+            const activePairs = document.getElementById('activePairs');
+            activePairs.innerHTML = '';
+            
+            const activePairsList = pairs.filter(p => p.active);
+            if (activePairsList.length > 0) {
+                activePairsList.slice(0, 5).forEach(pair => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-coins text-info me-2"></i>${pair.symbol}`;
+                    activePairs.appendChild(li);
+                });
+                if (activePairsList.length > 5) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<small class="text-muted">...and ${activePairsList.length - 5} more</small>`;
+                    activePairs.appendChild(li);
+                }
+            } else {
+                activePairs.innerHTML = '<li class="text-muted">No trading pairs configured</li>';
+            }
+            
+            // Update active strategies
+            const activeStrategy = document.getElementById('activeStrategy');
+            const activeStrategiesList = strategies.filter(s => s.active);
+            if (activeStrategiesList.length > 0) {
+                activeStrategy.innerHTML = '';
+                activeStrategiesList.slice(0, 3).forEach(strategy => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <div class="badge bg-primary mb-1">${strategy.display_name}</div>
+                        <small class="text-muted d-block">Risk: ${(strategy.risk_per_trade * 100).toFixed(1)}%</small>
+                    `;
+                    activeStrategy.appendChild(div);
+                });
+                if (activeStrategiesList.length > 3) {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<small class="text-muted">...and ${activeStrategiesList.length - 3} more</small>`;
+                    activeStrategy.appendChild(div);
+                }
+            } else {
+                activeStrategy.innerHTML = '<span class="text-muted">No strategies configured</span>';
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+                    ${message}
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

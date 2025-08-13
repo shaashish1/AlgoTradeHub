@@ -1,0 +1,141 @@
+alpha_vantage:
+  api_key: ''
+backtest:
+  commission: 0.001
+  end_date: '2024-01-01'
+  initial_capital: 10000
+  start_date: '2023-01-01'
+backup:
+  aws_access_key: ''
+  aws_secret_key: ''
+  s3_bucket: ''
+coinapi:
+  api_key: ''
+database:
+  database: algotrading
+  host: localhost
+  password: ''
+  port: 5432
+  username: ''
+email:
+  password: ''
+  smtp_port: 587
+  smtp_server: smtp.gmail.com
+  username: ''
+encryption:
+  secret_key: ''
+exchanges:
+  binance:
+    active: true
+    api_key: ''
+    rate_limit: 1200
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+    - BNB/USDT
+  bitbns:
+    active: true
+    api_key: ''
+    rate_limit: 1000
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+  bitget:
+    active: true
+    api_key: ''
+    passphrase: ''
+    rate_limit: 100
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+  bybit:
+    active: true
+    api_key: ''
+    rate_limit: 120
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+  cex:
+    active: true
+    api_key: ''
+    rate_limit: 600
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USD
+    - ETH/USD
+  deribit:
+    active: true
+    api_key: ''
+    rate_limit: 20
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC-PERPETUAL
+    - ETH-PERPETUAL
+  kraken:
+    active: true
+    api_key: ''
+    rate_limit: 3000
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USD
+    - ETH/USD
+    - XRP/USD
+  okx:
+    active: true
+    api_key: ''
+    passphrase: ''
+    rate_limit: 100
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+  poloniex:
+    active: true
+    api_key: ''
+    rate_limit: 167
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+  wazirx:
+    active: true
+    api_key: ''
+    rate_limit: 1000
+    sandbox: true
+    secret: ''
+    symbols:
+    - BTC/USDT
+    - ETH/USDT
+live_trading: false
+logging:
+  error_log: logs/error.log
+  trade_log: logs/trades.log
+max_positions: 3
+risk_per_trade: 0.02
+scan_interval: 5
+strategy:
+  name: rsi_strategy
+  parameters:
+    rsi_overbought: 70
+    rsi_oversold: 30
+    rsi_period: 14
+    sma_period: 20
+    volume_threshold: 1000000
+telegram:
+  bot_token: ''
+  chat_id: ''
+yahoo_finance:
+  api_key: ''

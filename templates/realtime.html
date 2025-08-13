@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Trading - AlgoTrading</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-line me-2"></i>AlgoTrading
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('backtest_page') }}">
+                            <i class="fas fa-history me-1"></i>Backtest
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('realtime_page') }}">
+                            <i class="fas fa-broadcast-tower me-1"></i>Real-Time
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <span class="navbar-text">
+                            <i class="fas fa-circle {{ 'text-success' if scanner_running else 'text-danger' }} me-1"></i>
+                            {{ 'Scanner Running' if scanner_running else 'Scanner Stopped' }}
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <span class="navbar-text ms-3">
+                            <i class="fas fa-{{ 'play' if live_trading else 'pause' }} me-1"></i>
+                            {{ 'Live Trading' if live_trading else 'Demo Mode' }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Control Panel -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-play-circle me-2"></i>Scanner Control
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success" id="start-scanner-btn" 
+                                    onclick="startScanner()" {{ 'disabled' if scanner_running else '' }}>
+                                <i class="fas fa-play me-2"></i>Start Scanner
+                            </button>
+                            <button type="button" class="btn btn-danger" id="stop-scanner-btn" 
+                                    onclick="stopScanner()" {{ 'disabled' if not scanner_running else '' }}>
+                                <i class="fas fa-stop me-2"></i>Stop Scanner
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="trading-mode-section">
+                            <h6>Trading Mode</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="trading-mode" id="demo-mode" 
+                                       value="demo" {{ 'checked' if not live_trading else '' }}>
+                                <label class="form-check-label" for="demo-mode">
+                                    <i class="fas fa-pause me-1"></i>Demo Mode
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="trading-mode" id="live-mode" 
+                                       value="live" {{ 'checked' if live_trading else '' }}>
+                                <label class="form-check-label" for="live-mode">
+                                    <i class="fas fa-play me-1"></i>Live Trading
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Live trading uses real money. Be careful!
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Exchanges -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exchange-alt me-2"></i>Active Exchanges
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if active_exchanges %}
+                            <div class="exchanges-list">
+                                {% for exchange_name, exchange_config in active_exchanges.items() %}
+                                <div class="exchange-item mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ exchange_name|title }}</h6>
+                                            <small class="text-muted">
+                                                {{ exchange_config.get('symbols', [])|length }} symbols
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-{{ 'success' if exchange_config.get('sandbox', True) else 'danger' }}">
+                                                {{ 'Sandbox' if exchange_config.get('sandbox', True) else 'Live' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="symbols-list mt-2">
+                                        {% for symbol in exchange_config.get('symbols', [])[:3] %}
+                                        <span class="badge bg-secondary me-1">{{ symbol }}</span>
+                                        {% endfor %}
+                                        {% if exchange_config.get('symbols', [])|length > 3 %}
+                                        <span class="badge bg-light text-dark">+{{ exchange_config.get('symbols', [])|length - 3 }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted text-center">
+                                <i class="fas fa-times-circle fa-2x mb-2"></i>
+                                <p>No active exchanges</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Strategy Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-brain me-2"></i>Strategy Status
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="strategy-info">
+                            <h6>RSI Strategy</h6>
+                            <div class="strategy-params">
+                                <div class="param-item">
+                                    <span class="param-label">RSI Period:</span>
+                                    <span class="param-value">14</span>
+                                </div>
+                                <div class="param-item">
+                                    <span class="param-label">Overbought:</span>
+                                    <span class="param-value">70</span>
+                                </div>
+                                <div class="param-item">
+                                    <span class="param-label">Oversold:</span>
+                                    <span class="param-value">30</span>
+                                </div>
+                                <div class="param-item">
+                                    <span class="param-label">Scan Interval:</span>
+                                    <span class="param-value">5s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <!-- Open Positions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-coins me-2"></i>Open Positions
+                            </h5>
+                            <div>
+                                <span class="badge bg-primary" id="positions-count">{{ open_positions|length }}</span>
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="refreshPositions()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="positions-table-container">
+                            {% if open_positions %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="positions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Exchange</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Entry Price</th>
+                                                <th>Current Price</th>
+                                                <th>Quantity</th>
+                                                <th>PnL</th>
+                                                <th>PnL %</th>
+                                                <th>Duration</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for position_key, position in open_positions.items() %}
+                                            <tr>
+                                                <td>{{ position.exchange|title }}</td>
+                                                <td>{{ position.symbol }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if position.side == 'buy' else 'danger' }}">
+                                                        {{ position.side|upper }}
+                                                    </span>
+                                                </td>
+                                                <td>${{ "%.4f"|format(position.entry_price) }}</td>
+                                                <td>${{ "%.4f"|format(getattr(position, 'current_price', position.entry_price)) }}</td>
+                                                <td>{{ "%.4f"|format(position.quantity) }}</td>
+                                                <td class="text-{{ 'success' if position.pnl >= 0 else 'danger' }}">
+                                                    ${{ "%.2f"|format(position.pnl) }}
+                                                </td>
+                                                <td class="text-{{ 'success' if position.pnl_percentage >= 0 else 'danger' }}">
+                                                    {{ "%.2f"|format(position.pnl_percentage) }}%
+                                                </td>
+                                                <td>{{ position.entry_time.strftime('%H:%M:%S') if position.entry_time else 'N/A' }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary">{{ position.status|upper }}</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>No open positions</p>
+                                    <small>Positions will appear here when the scanner finds trading opportunities</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Signals -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-signal me-2"></i>Recent Trading Signals
+                            </h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="clearSignals()">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshSignals()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="signals-container">
+                            <div class="signals-list" id="signals-list">
+                                <!-- Signals will be populated here by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Trades -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Recent Trades
+                            </h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshTrades()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="trades-table-container">
+                            {% if recent_trades %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="trades-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Exchange</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Entry Price</th>
+                                                <th>Exit Price</th>
+                                                <th>Quantity</th>
+                                                <th>PnL</th>
+                                                <th>PnL %</th>
+                                                <th>Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for trade in recent_trades %}
+                                            <tr>
+                                                <td>{{ trade.exit_time.strftime('%H:%M:%S') if trade.exit_time else 'N/A' }}</td>
+                                                <td>{{ trade.exchange|title }}</td>
+                                                <td>{{ trade.symbol }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if trade.side == 'buy' else 'danger' }}">
+                                                        {{ trade.side|upper }}
+                                                    </span>
+                                                </td>
+                                                <td>${{ "%.4f"|format(trade.entry_price) }}</td>
+                                                <td>${{ "%.4f"|format(trade.exit_price) if trade.exit_price else 'N/A' }}</td>
+                                                <td>{{ "%.4f"|format(trade.quantity) }}</td>
+                                                <td class="text-{{ 'success' if trade.pnl >= 0 else 'danger' }}">
+                                                    ${{ "%.2f"|format(trade.pnl) }}
+                                                </td>
+                                                <td class="text-{{ 'success' if trade.pnl_percentage >= 0 else 'danger' }}">
+                                                    {{ "%.2f"|format(trade.pnl_percentage) }}%
+                                                </td>
+                                                <td>
+                                                    {% if trade.entry_time and trade.exit_time %}
+                                                        {{ ((trade.exit_time - trade.entry_time).total_seconds() / 60)|round(1) }}m
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                    <p>No recent trades</p>
+                                    <small>Completed trades will appear here</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="signal-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-signal me-2"></i>
+                <strong class="me-auto">Trading Signal</strong>
+                <small class="text-muted">now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="signal-toast-body">
+                <!-- Signal details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        let signalToast = null;
+        let updateInterval = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize toast
+            signalToast = new bootstrap.Toast(document.getElementById('signal-toast'));
+            
+            // Start auto-refresh
+            startAutoRefresh();
+            
+            // Initial load
+            refreshAll();
+        });
+
+        function startScanner() {
+            fetch('/api/start_scanner', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error starting scanner: ' + data.error);
+                } else {
+                    document.getElementById('start-scanner-btn').disabled = true;
+                    document.getElementById('stop-scanner-btn').disabled = false;
+                    showNotification('Scanner started successfully', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting scanner:', error);
+                alert('Error starting scanner: ' + error.message);
+            });
+        }
+
+        function stopScanner() {
+            fetch('/api/stop_scanner', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error stopping scanner: ' + data.error);
+                } else {
+                    document.getElementById('start-scanner-btn').disabled = false;
+                    document.getElementById('stop-scanner-btn').disabled = true;
+                    showNotification('Scanner stopped successfully', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping scanner:', error);
+                alert('Error stopping scanner: ' + error.message);
+            });
+        }
+
+        function refreshAll() {
+            refreshPositions();
+            refreshSignals();
+            refreshTrades();
+        }
+
+        function refreshPositions() {
+            fetch('/api/get_positions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.positions) {
+                        updatePositionsTable(data.positions);
+                        document.getElementById('positions-count').textContent = Object.keys(data.positions).length;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing positions:', error);
+                });
+        }
+
+        function refreshSignals() {
+            // This would typically fetch from a signals endpoint
+            // For now, we'll simulate with recent trades
+            fetch('/api/get_trades')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.trades) {
+                        updateSignalsList(data.trades);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing signals:', error);
+                });
+        }
+
+        function refreshTrades() {
+            fetch('/api/get_trades')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.trades) {
+                        updateTradesTable(data.trades);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing trades:', error);
+                });
+        }
+
+        function updatePositionsTable(positions) {
+            const container = document.getElementById('positions-table-container');
+            
+            if (Object.keys(positions).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No open positions</p>
+                        <small>Positions will appear here when the scanner finds trading opportunities</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <div class="table-responsive">
+                    <table class="table table-striped" id="positions-table">
+                        <thead>
+                            <tr>
+                                <th>Exchange</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Entry Price</th>
+                                <th>Current Price</th>
+                                <th>Quantity</th>
+                                <th>PnL</th>
+                                <th>PnL %</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            for (const [key, position] of Object.entries(positions)) {
+                const pnlClass = position.pnl >= 0 ? 'text-success' : 'text-danger';
+                const sideClass = position.side === 'buy' ? 'success' : 'danger';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${position.exchange}</td>
+                        <td>${position.symbol}</td>
+                        <td><span class="badge bg-${sideClass}">${position.side.toUpperCase()}</span></td>
+                        <td>$${position.entry_price.toFixed(4)}</td>
+                        <td>$${position.current_price.toFixed(4)}</td>
+                        <td>${position.quantity.toFixed(4)}</td>
+                        <td class="${pnlClass}">$${position.pnl.toFixed(2)}</td>
+                        <td class="${pnlClass}">${position.pnl_percentage.toFixed(2)}%</td>
+                        <td>${formatDuration(position.entry_time)}</td>
+                        <td><span class="badge bg-primary">${position.status.toUpperCase()}</span></td>
+                    </tr>
+                `;
+            }
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function updateSignalsList(trades) {
+            const container = document.getElementById('signals-list');
+            
+            if (trades.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-signal fa-3x mb-3"></i>
+                        <p>No recent signals</p>
+                        <small>Trading signals will appear here in real-time</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let signalsHTML = '';
+            const recentTrades = trades.slice(-10).reverse(); // Show last 10 trades
+
+            recentTrades.forEach(trade => {
+                const sideClass = trade.side === 'buy' ? 'success' : 'danger';
+                const sideIcon = trade.side === 'buy' ? 'arrow-up' : 'arrow-down';
+                
+                signalsHTML += `
+                    <div class="signal-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-${sideIcon} text-${sideClass} me-2"></i>
+                                <div>
+                                    <strong>${trade.side.toUpperCase()}</strong> ${trade.symbol}
+                                    <small class="text-muted d-block">${trade.exchange}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div>$${trade.entry_price.toFixed(4)}</div>
+                                <small class="text-muted">${formatTimestamp(trade.entry_time)}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = signalsHTML;
+        }
+
+        function updateTradesTable(trades) {
+            const container = document.getElementById('trades-table-container');
+            
+            if (trades.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>No recent trades</p>
+                        <small>Completed trades will appear here</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <div class="table-responsive">
+                    <table class="table table-striped" id="trades-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Exchange</th>
+                                <th>Symbol</th>
+                                <th>Side</th>
+                                <th>Entry Price</th>
+                                <th>Exit Price</th>
+                                <th>Quantity</th>
+                                <th>PnL</th>
+                                <th>PnL %</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            const recentTrades = trades.slice(-20).reverse(); // Show last 20 trades
+
+            recentTrades.forEach(trade => {
+                const pnlClass = trade.pnl >= 0 ? 'text-success' : 'text-danger';
+                const sideClass = trade.side === 'buy' ? 'success' : 'danger';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${formatTimestamp(trade.exit_time)}</td>
+                        <td>${trade.exchange}</td>
+                        <td>${trade.symbol}</td>
+                        <td><span class="badge bg-${sideClass}">${trade.side.toUpperCase()}</span></td>
+                        <td>$${trade.entry_price.toFixed(4)}</td>
+                        <td>$${trade.exit_price ? trade.exit_price.toFixed(4) : 'N/A'}</td>
+                        <td>${trade.quantity.toFixed(4)}</td>
+                        <td class="${pnlClass}">$${trade.pnl.toFixed(2)}</td>
+                        <td class="${pnlClass}">${trade.pnl_percentage.toFixed(2)}%</td>
+                        <td>${calculateDuration(trade.entry_time, trade.exit_time)}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function clearSignals() {
+            document.getElementById('signals-list').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-signal fa-3x mb-3"></i>
+                    <p>No recent signals</p>
+                    <small>Trading signals will appear here in real-time</small>
+                </div>
+            `;
+        }
+
+        function startAutoRefresh() {
+            updateInterval = setInterval(refreshAll, 5000); // Refresh every 5 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+        }
+
+        function showNotification(message, type) {
+            const toastBody = document.getElementById('signal-toast-body');
+            toastBody.innerHTML = `
+                <div class="alert alert-${type} mb-0">
+                    ${message}
+                </div>
+            `;
+            signalToast.show();
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            return new Date(timestamp).toLocaleTimeString();
+        }
+
+        function formatDuration(startTime) {
+            if (!startTime) return 'N/A';
+            const now = new Date();
+            const start = new Date(startTime);
+            const diffMinutes = Math.floor((now - start) / (1000 * 60));
+            
+            if (diffMinutes < 60) {
+                return `${diffMinutes}m`;
+            } else {
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                return `${hours}h ${minutes}m`;
+            }
+        }
+
+        function calculateDuration(startTime, endTime) {
+            if (!startTime || !endTime) return 'N/A';
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const diffMinutes = Math.floor((end - start) / (1000 * 60));
+            
+            if (diffMinutes < 60) {
+                return `${diffMinutes}m`;
+            } else {
+                const hours = Math.floor(diffMinutes / 60);
+                const minutes = diffMinutes % 60;
+                return `${hours}h ${minutes}m`;
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>

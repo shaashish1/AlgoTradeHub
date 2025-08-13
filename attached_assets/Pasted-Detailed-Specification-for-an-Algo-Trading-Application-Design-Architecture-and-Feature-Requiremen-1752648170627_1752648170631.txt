@@ -1,0 +1,119 @@
+Detailed Specification for an Algo Trading Application
+Design, Architecture, and Feature Requirements
+Overview
+An advanced AlgoTrading application should be architected with modularity, flexibility, and real-time 
+responsiveness. The system will support both back-testing and forward-testing of trading strategies across 
+multiple cryptocurrency exchanges, utilizing the CCXT library for API integration.
+Architectural Components
+*	Configuration Management: Centralized configuration via a config.yaml file, allowing users to specify 
+which exchanges are enabled, provide credentials, and set other strategy and asset parameters.
+*	Exchange Integration: Use the CCXT library to connect to a wide range of cryptocurrency exchanges 
+(e.g., ['ace', 'alpaca', 'ascendex', 'bequant', 'bigone', 'binance', 'binancecoinm', 'binanceus', 'binanceusdm', 
+'bit2c', 'bitbank', 'bitbay', 'bitbns', 'bitcoincom', 'bitfinex', 'bitfinex2', 'bitflyer', 'bitforex', 'bitget', 'bithumb', 
+'bitmart', 'bitmex', 'bitopro', 'bitpanda', 'bitrue', 'bitso', 'bitstamp', 'bitstamp1', 'bittrex', 'bitvavo', 'bkex', 
+'bl3p', 'blockchaincom', 'btcalpha', 'btcbox', 'btcex', 'btcmarkets', 'btctradeua', 'btcturk', 'buda', 'bybit', 
+'cex', 'coinbase', 'coinbaseprime', 'coinbasepro', 'coincheck', 'coinex', 'coinfalcon', 'coinmate', 'coinone', 
+'coinsph', 'coinspot', 'cryptocom', 'currencycom', 'delta', 'deribit', 'digifinex', 'exmo', 'flowbtc', 'fmfwio', 
+'gate', 'gateio', 'gemini', 'hitbtc', 'hitbtc3', 'hollaex', 'huobi', 'huobijp', 'huobipro', 'idex', 
+'independentreserve', 'indodax', 'itbit', 'kraken', 'krakenfutures', 'kucoin', 'kucoinfutures', 'kuna', 'latoken', 
+'lbank', 'lbank2', 'luno', 'lykke', 'mercado', 'mexc', 'mexc3', 'ndax', 'novadax', 'oceanex', 'okcoin', 'okex', 
+'okex5', 'okx', 'paymium', 'phemex', 'poloniex', 'poloniexfutures', 'probit', 'ripio', 'stex', 'tidex', 'timex', 
+'tokocrypto', 'upbit', 'wavesexchange', 'wazirx', 'whitebit', 'woo', 'yobit', 'zaif', 'zb', 'zonda']).
+*	Back-Testing Module: Encapsulated in backtest.py, this module allows users to test their trading 
+strategies against historical data, analyzing performance metrics and visualizing results.
+*	Forward-Testing & Real-Time Trading Module: Handled by main.py, this component scans markets in 
+real time, generates signals based on strategy conditions, and tracks the live performance of executed 
+trades. Optionally, live orders can be placed if exchange credentials are configured and the flag is Active 
+in config.yaml (Live/Demo)
+*	Exchange Listing Utility: The �CCXT_ListofExchange.py� utility provides a dynamic list of all exchanges 
+supported by CCXT, facilitating easy configuration and onboarding.
+*	Configuration Directory: A secure, structured directory where users can input and manage their 
+exchange API credentials and other sensitive settings. 
+Configuration Layer
+*	The config.yaml file will allow users to toggle which exchanges are active. Each exchange configuration 
+should support API key, secret, and any relevant credentials or parameters (such as rate limits, trading 
+pairs, etc.).
+*	Support for a flag system to easily activate/deactivate exchanges as per user requirements.
+*	Configuration directory securely manages sensitive credentials separately from code, enabling both local 
+and production deployments.
+Back-Testing Logic (backtest.py)
+When backtest.py is run, the application fetches historical price data for the defined assets and executes the 
+chosen trading strategy on this data. Include visual charts on screen to show backtest results. 
+*	Performance metrics displayed will include:
+1.	Start
+2.	End
+3.	Duration
+4.	Exposure Time [%]
+5.	Equity Final [$]
+6.	Equity Peak [$]
+7.	Return [%]
+8.	Buy & Hold Return [%]
+9.	Return (Ann.) [%]
+10.	Volatility (Ann.) [%]
+11.	CAGR [%]
+12.	Sharpe Ratio
+13.	Sortino Ratio
+14.	Calmar Ratio
+15.	Alpha [%]
+16.	Beta
+17.	Max. Drawdown [%]
+18.	Avg. Drawdown [%]
+19.	Max. Drawdown Duration
+20.	Avg. Drawdown Duration
+21.	# Trades
+22.	Win Rate [%]
+23.	Best Trade [%]
+24.	Worst Trade [%]
+25.	Avg. Trade [%]
+26.	Max. Trade Duration
+27.	Avg. Trade Duration
+28.	Profit Factor
+29.	Expectancy [%]
+Refer https://github.com/kernc/backtesting.py this provides all output vales for backtest. 
+Results and KPIs are shown using Pandas DataFrames for tabular representation and rich visualization via charts 
+(e.g., matplotlib, Plotly).
+Forward-Testing (DEMO) and Real-Time Scanning (Live_trade_main.py)
+*	Upon execution, main.py the script should continuously monitors selected all input assets on active 
+exchanges in real time.
+*	When a strategy condition is met (e.g., buy or sell signal), the application notifies the user, and if live 
+trading is enabled, places the order through the relevant exchange API. If exchange in not active and in 
+demo mode, it should display the trades on screen and like order executed just like in exchange, Assets | 
+Quantity | Amount| Time Trade entered| Profit/Loss| Trade active or closed|
+*	The application tracks each trade from entry to exit, enabling comprehensive forward-testing and live 
+monitoring.
+*	Trade lifecycle management ensures that each open trade is monitored until closure, with performance 
+information logged for review.
+Asynchronous Execution and Performance
+*	The application leverages the asynchronous mode supported by CCXT. With asyncio and async/await on 
+Python 3.7.0+, multiple exchange APIs and asset data can be queried concurrently, maximizing 
+performance and reducing latency.
+*	This architecture ensures the system remains responsive even with high-frequency scans and multiple 
+parallel tasks.
+Exchange Directory and Listing
+*	CCXT_ListofExchange.py enables discovery of all currently supported exchanges, simplifying user 
+selection and configuration in config.yaml.
+Security and Best Practices
+*	API credentials are stored securely outside core codebase, with best practices for encryption and access 
+control.
+*	Logs and sensitive data are managed and rotated according to compliance standards.
+Summary
+A robust AlgoTrading application should provide seamless integration with major exchanges, support flexible 
+configuration, enable rigorous back- and forward-testing of strategies, and operate efficiently using 
+asynchronous programming paradigms. By splitting logic into clear modules and providing rich analytics, users 
+can optimize and deploy trading strategies with confidence.
+I want to back-test the strategy, and also be able to do forward test to know how the strategy is performing in 
+realtime. We need config.yaml file to be used for configuring various exchanges available from CCXT like Kraken, 
+Binance, BYbit, Bitget, CEX.io, Dribit, OKK, DeltaExchange,  WazirX, BITBNS, OKK, Poloniex and all available and 
+give a flag which exchange is active. when I run main.py it is scanning in real-time and also doing back test, is my 
+understanding correct? if yes, can we split the logic to backtest.py , if this file is run, it will do a backtest using the 
+defined assets and strategy and display results in screen using panda data frames and charts. provide profit 
+percentage, profit factor, max drawdown, Average trade and total trades, Net Profit, these KPI as part of backtest 
+results. when we run main.py it should run raltime scan and provide message when the strategy condition meets 
+for buy or sell. Once the order is picked as buy or sell then track that assets until trade is closed. This will provide 
+me to track forward testy and if I do configuration to exchange, then live orders can also be placed.
+The CCXT library supports The library supports concurrent asynchronous mode with asyncio and async/await in 
+Python 3.7.0+ and let utilize this feature in our application. 
+I have created one file CCXT_ListofExchange.py which can list all the supported exchanges from CCXT. Use this to 
+create configuration file for user to configure active exchange. 
+We can create a configuration directory to enter exchange credentials.
+

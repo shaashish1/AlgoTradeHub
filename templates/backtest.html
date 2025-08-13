@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest - AlgoTrading</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-line me-2"></i>AlgoTrading
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('backtest_page') }}">
+                            <i class="fas fa-history me-1"></i>Backtest
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('realtime_page') }}">
+                            <i class="fas fa-broadcast-tower me-1"></i>Real-Time
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Backtest Configuration -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2"></i>Backtest Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="backtest-form">
+                            <div class="mb-3">
+                                <label for="exchange" class="form-label">Exchange</label>
+                                <select class="form-select" id="exchange" name="exchange" required>
+                                    <option value="">Select Exchange</option>
+                                    {% for exchange_name, exchange_config in exchanges %}
+                                    <option value="{{ exchange_name }}">{{ exchange_name|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="symbol" class="form-label">Trading Pair</label>
+                                <select class="form-select" id="symbol" name="symbol" required>
+                                    <option value="">Select Symbol</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="timeframe" class="form-label">Timeframe</label>
+                                <select class="form-select" id="timeframe" name="timeframe">
+                                    <option value="1m">1 Minute</option>
+                                    <option value="5m">5 Minutes</option>
+                                    <option value="15m">15 Minutes</option>
+                                    <option value="30m">30 Minutes</option>
+                                    <option value="1h" selected>1 Hour</option>
+                                    <option value="4h">4 Hours</option>
+                                    <option value="1d">1 Day</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ backtest_config.get('start_date', '2023-01-01') }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{{ backtest_config.get('end_date', '2024-01-01') }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="initial_capital" class="form-label">Initial Capital ($)</label>
+                                <input type="number" class="form-control" id="initial_capital" name="initial_capital" 
+                                       value="{{ backtest_config.get('initial_capital', 10000) }}" step="0.01" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="commission" class="form-label">Commission (%)</label>
+                                <input type="number" class="form-control" id="commission" name="commission" 
+                                       value="{{ backtest_config.get('commission', 0.1) }}" step="0.001" required>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-play me-2"></i>Run Backtest
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                    <i class="fas fa-redo me-2"></i>Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Strategy Information -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-brain me-2"></i>Strategy Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="strategy-info">
+                            <h6>Active Strategy: RSI Strategy</h6>
+                            <p class="text-muted">
+                                Uses RSI indicator to generate buy/sell signals based on overbought and oversold conditions.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li><strong>RSI Period:</strong> 14</li>
+                                <li><strong>Overbought:</strong> 70</li>
+                                <li><strong>Oversold:</strong> 30</li>
+                                <li><strong>Volume Threshold:</strong> 1M</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backtest Results -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-area me-2"></i>Backtest Results
+                            </h5>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="showChart('portfolio')">
+                                    Portfolio
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="showChart('drawdown')">
+                                    Drawdown
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="showChart('trades')">
+                                    Trades
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="backtest-results" class="text-center text-muted">
+                            <i class="fas fa-chart-line fa-4x mb-3"></i>
+                            <p>Configure your backtest parameters and click "Run Backtest" to see results</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-calculator me-2"></i>Performance Metrics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="performance-metrics" class="row">
+                            <div class="col-12 text-center text-muted">
+                                Run a backtest to see performance metrics
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trade Analysis -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list-alt me-2"></i>Trade Analysis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="trade-analysis" class="text-center text-muted">
+                            Trade analysis will appear here after running a backtest
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="progressModalLabel">Running Backtest</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p id="progress-message">Initializing backtest...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        const exchangeSymbols = {
+            {% for exchange_name, exchange_config in exchanges %}
+            '{{ exchange_name }}': {{ exchange_config.get('symbols', [])|tojson }},
+            {% endfor %}
+        };
+
+        let backtestResults = null;
+        let progressModal = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize modal
+            progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+            
+            // Set up exchange change handler
+            document.getElementById('exchange').addEventListener('change', function() {
+                updateSymbolOptions();
+            });
+
+            // Set up form submission
+            document.getElementById('backtest-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                runBacktest();
+            });
+        });
+
+        function updateSymbolOptions() {
+            const exchangeSelect = document.getElementById('exchange');
+            const symbolSelect = document.getElementById('symbol');
+            const selectedExchange = exchangeSelect.value;
+
+            // Clear existing options
+            symbolSelect.innerHTML = '<option value="">Select Symbol</option>';
+
+            if (selectedExchange && exchangeSymbols[selectedExchange]) {
+                exchangeSymbols[selectedExchange].forEach(symbol => {
+                    const option = document.createElement('option');
+                    option.value = symbol;
+                    option.textContent = symbol;
+                    symbolSelect.appendChild(option);
+                });
+            }
+        }
+
+        function runBacktest() {
+            const formData = new FormData(document.getElementById('backtest-form'));
+            const backtestData = {
+                exchange: formData.get('exchange'),
+                symbol: formData.get('symbol'),
+                timeframe: formData.get('timeframe'),
+                start_date: formData.get('start_date'),
+                end_date: formData.get('end_date'),
+                initial_capital: parseFloat(formData.get('initial_capital')),
+                commission: parseFloat(formData.get('commission'))
+            };
+
+            // Show progress modal
+            progressModal.show();
+            updateProgress('Fetching historical data...');
+
+            fetch('/api/run_backtest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(backtestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Simulate progress updates
+                setTimeout(() => updateProgress('Running strategy analysis...'), 1000);
+                setTimeout(() => updateProgress('Calculating performance metrics...'), 2000);
+                setTimeout(() => updateProgress('Generating charts...'), 3000);
+                setTimeout(() => {
+                    progressModal.hide();
+                    loadBacktestResults();
+                }, 4000);
+            })
+            .catch(error => {
+                console.error('Error running backtest:', error);
+                progressModal.hide();
+                alert('Error running backtest: ' + error.message);
+            });
+        }
+
+        function updateProgress(message) {
+            document.getElementById('progress-message').textContent = message;
+        }
+
+        function loadBacktestResults() {
+            // Load metrics
+            fetch('/api/get_metrics')
+                .then(response => response.json())
+                .then(data => {
+                    displayMetrics(data.metrics);
+                })
+                .catch(error => {
+                    console.error('Error loading metrics:', error);
+                });
+
+            // Load default chart
+            showChart('portfolio');
+        }
+
+        function displayMetrics(metrics) {
+            const metricsContainer = document.getElementById('performance-metrics');
+            metricsContainer.innerHTML = '';
+
+            const keyMetrics = [
+                'Return [%]', 'Volatility (Ann.) [%]', 'Sharpe Ratio', 'Max. Drawdown [%]',
+                '# Trades', 'Win Rate [%]', 'Profit Factor', 'Net Profit [$]'
+            ];
+
+            keyMetrics.forEach(metric => {
+                if (metrics[metric] !== undefined) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3 col-sm-6 mb-3';
+                    col.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-label">${metric}</div>
+                            <div class="metric-value">${metrics[metric]}</div>
+                        </div>
+                    `;
+                    metricsContainer.appendChild(col);
+                }
+            });
+        }
+
+        function showChart(type) {
+            const chartDiv = document.getElementById('backtest-results');
+            chartDiv.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-primary" role="status"></div></div>';
+
+            fetch(`/api/get_chart_data?type=${type}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.chart) {
+                        const chartData = JSON.parse(data.chart);
+                        Plotly.newPlot('backtest-results', chartData.data, chartData.layout, {responsive: true});
+                    } else {
+                        chartDiv.innerHTML = '<div class="text-center text-muted">No chart data available</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart:', error);
+                    chartDiv.innerHTML = '<div class="text-center text-danger">Error loading chart</div>';
+                });
+        }
+
+        function resetForm() {
+            document.getElementById('backtest-form').reset();
+            document.getElementById('symbol').innerHTML = '<option value="">Select Symbol</option>';
+            document.getElementById('backtest-results').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-line fa-4x mb-3"></i>
+                    <p>Configure your backtest parameters and click "Run Backtest" to see results</p>
+                </div>
+            `;
+            document.getElementById('performance-metrics').innerHTML = `
+                <div class="col-12 text-center text-muted">
+                    Run a backtest to see performance metrics
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

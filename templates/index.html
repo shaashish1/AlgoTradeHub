@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlgoTrading Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-chart-line me-2"></i>AlgoTrading
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('index') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('backtest_page') }}">
+                            <i class="fas fa-history me-1"></i>Backtest
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('realtime_page') }}">
+                            <i class="fas fa-broadcast-tower me-1"></i>Real-Time
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <span class="navbar-text">
+                            <i class="fas fa-circle {{ 'text-success' if scanner_running else 'text-danger' }} me-1"></i>
+                            {{ 'Scanner Running' if scanner_running else 'Scanner Stopped' }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Performance Summary -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Performance Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="performance-metrics">
+                            <div class="metric-item">
+                                <span class="metric-label">Total Trades:</span>
+                                <span class="metric-value">{{ performance.get('total_trades', 0) }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Win Rate:</span>
+                                <span class="metric-value text-{{ 'success' if performance.get('win_rate', 0) > 50 else 'danger' }}">
+                                    {{ "%.2f"|format(performance.get('win_rate', 0)) }}%
+                                </span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Net PnL:</span>
+                                <span class="metric-value text-{{ 'success' if performance.get('net_pnl', 0) > 0 else 'danger' }}">
+                                    ${{ "%.2f"|format(performance.get('net_pnl', 0)) }}
+                                </span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Profit Factor:</span>
+                                <span class="metric-value">{{ "%.2f"|format(performance.get('profit_factor', 0)) }}</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Max Drawdown:</span>
+                                <span class="metric-value text-danger">
+                                    ${{ "%.2f"|format(performance.get('max_drawdown', 0)) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Exchanges -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exchange-alt me-2"></i>Active Exchanges
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if active_exchanges %}
+                            <div class="exchanges-list">
+                                {% for exchange_name, exchange_config in active_exchanges.items() %}
+                                <div class="exchange-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="exchange-name">{{ exchange_name|title }}</span>
+                                        <span class="badge bg-{{ 'success' if exchange_config.get('sandbox', True) else 'danger' }}">
+                                            {{ 'Sandbox' if exchange_config.get('sandbox', True) else 'Live' }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ exchange_config.get('symbols', [])|length }} symbols
+                                    </small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted text-center">No active exchanges</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard -->
+            <div class="col-md-9">
+                <!-- Chart Area -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Portfolio Performance
+                            </h5>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadChart('portfolio')">
+                                    Portfolio
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadChart('drawdown')">
+                                    Drawdown
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadChart('returns')">
+                                    Returns
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="main-chart" style="width: 100%; height: 400px;">
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <div class="text-muted">
+                                    <i class="fas fa-chart-line fa-3x mb-3"></i>
+                                    <p>Click a chart type above to view data</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Open Positions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-coins me-2"></i>Open Positions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if open_positions %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Exchange</th>
+                                            <th>Symbol</th>
+                                            <th>Side</th>
+                                            <th>Entry Price</th>
+                                            <th>Quantity</th>
+                                            <th>Current PnL</th>
+                                            <th>PnL %</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for position_key, position in open_positions.items() %}
+                                        <tr>
+                                            <td>{{ position.exchange|title }}</td>
+                                            <td>{{ position.symbol }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if position.side == 'buy' else 'danger' }}">
+                                                    {{ position.side|upper }}
+                                                </span>
+                                            </td>
+                                            <td>${{ "%.4f"|format(position.entry_price) }}</td>
+                                            <td>{{ "%.4f"|format(position.quantity) }}</td>
+                                            <td class="text-{{ 'success' if position.pnl > 0 else 'danger' }}">
+                                                ${{ "%.2f"|format(position.pnl) }}
+                                            </td>
+                                            <td class="text-{{ 'success' if position.pnl_percentage > 0 else 'danger' }}">
+                                                {{ "%.2f"|format(position.pnl_percentage) }}%
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ position.status|upper }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-muted text-center">No open positions</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Trades -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list me-2"></i>Recent Trades
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_trades %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Exchange</th>
+                                            <th>Symbol</th>
+                                            <th>Side</th>
+                                            <th>Entry Price</th>
+                                            <th>Exit Price</th>
+                                            <th>PnL</th>
+                                            <th>PnL %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for trade in recent_trades %}
+                                        <tr>
+                                            <td>{{ trade.exit_time.strftime('%Y-%m-%d %H:%M') if trade.exit_time else 'N/A' }}</td>
+                                            <td>{{ trade.exchange|title }}</td>
+                                            <td>{{ trade.symbol }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if trade.side == 'buy' else 'danger' }}">
+                                                    {{ trade.side|upper }}
+                                                </span>
+                                            </td>
+                                            <td>${{ "%.4f"|format(trade.entry_price) }}</td>
+                                            <td>${{ "%.4f"|format(trade.exit_price) if trade.exit_price else 'N/A' }}</td>
+                                            <td class="text-{{ 'success' if trade.pnl > 0 else 'danger' }}">
+                                                ${{ "%.2f"|format(trade.pnl) }}
+                                            </td>
+                                            <td class="text-{{ 'success' if trade.pnl_percentage > 0 else 'danger' }}">
+                                                {{ "%.2f"|format(trade.pnl_percentage) }}%
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-muted text-center">No recent trades</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="fixed-bottom">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="status-bar bg-light border-top p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted">Status:</span>
+                                <span class="ms-2" id="status-text">Ready</span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Last Update:</span>
+                                <span class="ms-2" id="last-update">{{ config_summary.get('last_loaded', 'Never') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(updateDashboard, 30000);
+        });
+
+        function initializeDashboard() {
+            updateStatus();
+            loadChart('portfolio');
+        }
+
+        function updateDashboard() {
+            updateStatus();
+            updatePositions();
+            updateTrades();
+        }
+
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status-text').textContent = 
+                        data.scanner_running ? 'Scanner Running' : 'Scanner Stopped';
+                    document.getElementById('last-update').textContent = 
+                        new Date(data.last_update).toLocaleString();
+                })
+                .catch(error => {
+                    console.error('Error updating status:', error);
+                });
+        }
+
+        function updatePositions() {
+            fetch('/api/get_positions')
+                .then(response => response.json())
+                .then(data => {
+                    // Update positions table if needed
+                    console.log('Positions updated:', data);
+                })
+                .catch(error => {
+                    console.error('Error updating positions:', error);
+                });
+        }
+
+        function updateTrades() {
+            fetch('/api/get_trades')
+                .then(response => response.json())
+                .then(data => {
+                    // Update trades table if needed
+                    console.log('Trades updated:', data);
+                })
+                .catch(error => {
+                    console.error('Error updating trades:', error);
+                });
+        }
+
+        function loadChart(type) {
+            const chartDiv = document.getElementById('main-chart');
+            chartDiv.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"></div></div>';
+            
+            fetch(`/api/get_chart_data?type=${type}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.chart) {
+                        const chartData = JSON.parse(data.chart);
+                        Plotly.newPlot('main-chart', chartData.data, chartData.layout, {responsive: true});
+                    } else {
+                        chartDiv.innerHTML = '<div class="text-center text-muted">No data available</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart:', error);
+                    chartDiv.innerHTML = '<div class="text-center text-danger">Error loading chart</div>';
+                });
+        }
+    </script>
+</body>
+</html>
