@@ -9,9 +9,13 @@ from models import db, Exchange, TradingPair, TradingStrategy, Trade, BacktestRe
 
 def init_database(app: Flask):
     """Initialize database with Flask app"""
-    # Configure database
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Use existing config or set default SQLite database
+    if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///algotrading.db')
+    
+    if not app.config.get('SQLALCHEMY_TRACK_MODIFICATIONS'):
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_pre_ping': True,
         'pool_recycle': 300,

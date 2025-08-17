@@ -13,16 +13,18 @@ import {
   BarChart3,
   Activity,
   Zap,
-  TrendingUp
+  TrendingUp,
+  PieChart
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: BarChart3 },
+  { name: 'Exchanges', href: '/exchanges', icon: Settings },
+  { name: 'Trading', href: '/trading', icon: TrendingUp },
+  { name: 'Portfolio', href: '/portfolio', icon: PieChart },
+  { name: 'Backtest', href: '/backtest', icon: Activity },
   { name: 'Features', href: '/features', icon: Zap },
-  { name: 'Backtest', href: '/backtest', icon: TrendingUp },
-  { name: 'Real-time', href: '/realtime', icon: Activity },
-  { name: 'Performance', href: '/performance', icon: TrendingUp },
 ]
 
 export function Header() {

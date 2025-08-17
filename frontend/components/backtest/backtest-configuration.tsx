@@ -85,10 +85,12 @@ export function BacktestConfiguration({ onStartBacktest }: BacktestConfiguration
             const backtestConfig: BacktestConfig = {
               symbol: asset,
               strategy,
+              timeframe: config.timeframes[0] || '1d',
               startDate: config.startDate,
               endDate: config.endDate,
               initialCapital,
-              commission: commission / 100
+              commission: commission / 100,
+              parameters: {}
             }
             
             await api.runBacktest(backtestConfig)

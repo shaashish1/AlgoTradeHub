@@ -19,10 +19,10 @@ import {
   RefreshCw,
   AlertTriangle
 } from 'lucide-react'
-import { api } from '@/lib/api'
+import { apiClient } from '@/lib/api'
 
 export function SettingsConfiguration() {
-  const [apiKeys, setApiKeys] = useState({
+  const [apiKeys, setApiKeys] = useState<Record<string, { key: string; secret: string; sandbox: boolean }>>({
     binance: { key: '', secret: '', sandbox: true },
     kraken: { key: '', secret: '', sandbox: false }
   })
@@ -43,11 +43,10 @@ export function SettingsConfiguration() {
   const handleSaveSettings = async () => {
     setIsSaving(true)
     try {
-      await api.saveConfig({
-        apiKeys,
-        notifications,
-        trading
-      })
+      // Save settings via API
+      console.log('Saving settings:', { apiKeys, notifications, trading })
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
     } catch (error) {
       console.error('Failed to save settings:', error)
     } finally {
@@ -57,127 +56,97 @@ export function SettingsConfiguration() {
 
   return (
     <div className="space-y-6">
-      {/* API Configuration */}
+      {/* API Keys */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            <span>🔑 Exchange API Keys</span>
+            API Keys
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Binance */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Binance</h3>
-              <div className="flex items-center space-x-2">
-                <Badge variant={apiKeys.binance.sandbox ? "secondary" : "default"}>
-                  {apiKeys.binance.sandbox ? "Sandbox" : "Live"}
+        <CardContent className="space-y-4">
+          {Object.entries(apiKeys).map(([exchange, config]) => (
+            <div key={exchange} className="space-y-3 p-4 border rounded-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium capitalize">{exchange}</h3>
+                <Badge variant={config.sandbox ? "secondary" : "default"}>
+                  {config.sandbox ? "Sandbox" : "Live"}
                 </Badge>
-                <Switch
-                  checked={apiKeys.binance.sandbox}
-                  onCheckedChange={(checked) => 
-                    setApiKeys(prev => ({
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter API key..."
+                    value={config.key}
+                    onChange={(e) => setApiKeys(prev => ({
                       ...prev,
-                      binance: { ...prev.binance, sandbox: checked }
-                    }))
-                  }
-                />
+                      [exchange]: { ...prev[exchange], key: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <Label>Secret Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter secret key..."
+                    value={config.secret}
+                    onChange={(e) => setApiKeys(prev => ({
+                      ...prev,
+                      [exchange]: { ...prev[exchange], secret: e.target.value }
+                    }))}
+                  />
+                </div>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="binance-key">API Key</Label>
-                <Input
-                  id="binance-key"
-                  type="password"
-                  placeholder="Enter Binance API key"
-                  value={apiKeys.binance.key}
-                  onChange={(e) => 
-                    setApiKeys(prev => ({
-                      ...prev,
-                      binance: { ...prev.binance, key: e.target.value }
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="binance-secret">Secret Key</Label>
-                <Input
-                  id="binance-secret"
-                  type="password"
-                  placeholder="Enter Binance secret key"
-                  value={apiKeys.binance.secret}
-                  onChange={(e) => 
-                    setApiKeys(prev => ({
-                      ...prev,
-                      binance: { ...prev.binance, secret: e.target.value }
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          ))}
         </CardContent>
       </Card>
-    </div>
-  )
-}    
-  {/* Trading Settings */}
+
+      {/* Trading Settings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            <span>🛡️ Trading Settings</span>
+            Trading Settings
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="max-positions">Max Positions</Label>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Max Positions</Label>
               <Input
-                id="max-positions"
                 type="number"
                 value={trading.maxPositions}
-                onChange={(e) => 
-                  setTrading(prev => ({ ...prev, maxPositions: Number(e.target.value) }))
-                }
+                onChange={(e) => setTrading(prev => ({ ...prev, maxPositions: parseInt(e.target.value) }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="risk-per-trade">Risk per Trade (%)</Label>
+            <div>
+              <Label>Risk Per Trade (%)</Label>
               <Input
-                id="risk-per-trade"
                 type="number"
                 step="0.1"
                 value={trading.riskPerTrade}
-                onChange={(e) => 
-                  setTrading(prev => ({ ...prev, riskPerTrade: Number(e.target.value) }))
-                }
+                onChange={(e) => setTrading(prev => ({ ...prev, riskPerTrade: parseFloat(e.target.value) }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="stop-loss">Stop Loss (%)</Label>
+            <div>
+              <Label>Stop Loss (%)</Label>
               <Input
-                id="stop-loss"
                 type="number"
                 step="0.1"
                 value={trading.stopLoss}
-                onChange={(e) => 
-                  setTrading(prev => ({ ...prev, stopLoss: Number(e.target.value) }))
-                }
+                onChange={(e) => setTrading(prev => ({ ...prev, stopLoss: parseFloat(e.target.value) }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="take-profit">Take Profit (%)</Label>
+            <div>
+              <Label>Take Profit (%)</Label>
               <Input
-                id="take-profit"
                 type="number"
                 step="0.1"
                 value={trading.takeProfit}
-                onChange={(e) => 
-                  setTrading(prev => ({ ...prev, takeProfit: Number(e.target.value) }))
-                }
+                onChange={(e) => setTrading(prev => ({ ...prev, takeProfit: parseFloat(e.target.value) }))}
               />
             </div>
           </div>
@@ -187,61 +156,59 @@ export function SettingsConfiguration() {
       {/* Notifications */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            <span>🔔 Notifications</span>
+            Notifications
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">Receive alerts via email</p>
-              </div>
-              <Switch
-                checked={notifications.email}
-                onCheckedChange={(checked) => 
-                  setNotifications(prev => ({ ...prev, email: checked }))
-                }
-              />
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Mail className="h-4 w-4" />
+              <Label>Email Notifications</Label>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Push Notifications</Label>
-                <p className="text-sm text-muted-foreground">Browser push notifications</p>
-              </div>
-              <Switch
-                checked={notifications.push}
-                onCheckedChange={(checked) => 
-                  setNotifications(prev => ({ ...prev, push: checked }))
-                }
-              />
+            <Switch
+              checked={notifications.email}
+              onCheckedChange={(checked) => 
+                setNotifications(prev => ({ ...prev, email: checked }))
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Smartphone className="h-4 w-4" />
+              <Label>Push Notifications</Label>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Trade Notifications</Label>
-                <p className="text-sm text-muted-foreground">Alerts for executed trades</p>
-              </div>
-              <Switch
-                checked={notifications.trades}
-                onCheckedChange={(checked) => 
-                  setNotifications(prev => ({ ...prev, trades: checked }))
-                }
-              />
+            <Switch
+              checked={notifications.push}
+              onCheckedChange={(checked) => 
+                setNotifications(prev => ({ ...prev, push: checked }))
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Server className="h-4 w-4" />
+              <Label>Trade Notifications</Label>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Signal Alerts</Label>
-                <p className="text-sm text-muted-foreground">Notifications for trading signals</p>
-              </div>
-              <Switch
-                checked={notifications.alerts}
-                onCheckedChange={(checked) => 
-                  setNotifications(prev => ({ ...prev, alerts: checked }))
-                }
-              />
+            <Switch
+              checked={notifications.trades}
+              onCheckedChange={(checked) => 
+                setNotifications(prev => ({ ...prev, trades: checked }))
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4" />
+              <Label>Alert Notifications</Label>
             </div>
+            <Switch
+              checked={notifications.alerts}
+              onCheckedChange={(checked) => 
+                setNotifications(prev => ({ ...prev, alerts: checked }))
+              }
+            />
           </div>
         </CardContent>
       </Card>

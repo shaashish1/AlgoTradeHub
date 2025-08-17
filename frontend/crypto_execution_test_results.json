@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-08-14T00:31:35.400169",
+  "initialization": {
+    "binance": true,
+    "kraken": false,
+    "bybit": true,
+    "okx": false
+  },
+  "execution_tests": {
+    "binance": {
+      "status": "order_creation_failed",
+      "error": "binance requires \"apiKey\" credential",
+      "current_price": 121588.68
+    },
+    "bybit": {
+      "status": "order_creation_failed",
+      "error": "bybit requires \"apiKey\" credential",
+      "current_price": 116190.0
+    }
+  },
+  "balances": {
+    "binance": {
+      "error": "binance requires \"apiKey\" credential"
+    },
+    "bybit": {
+      "error": "bybit requires \"apiKey\" credential"
+    }
+  },
+  "trading_pairs": {
+    "binance": {
+      "spot": 1467,
+      "futures": 23,
+      "options": 0,
+      "popular": 18
+    },
+    "bybit": {
+      "spot": 353,
+      "futures": 30,
+      "options": 1500,
+      "popular": 16
+    }
+  }
+}

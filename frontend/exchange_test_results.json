@@ -1,0 +1,171 @@
+{
+  "timestamp": "2025-08-14T00:19:56.461576",
+  "crypto_exchanges": {
+    "binance": {
+      "exchange": "binance",
+      "connected": true,
+      "markets_loaded": true,
+      "balance_accessible": false,
+      "order_book_accessible": true,
+      "ticker_accessible": true,
+      "error": null,
+      "market_count": 2069
+    },
+    "bitbns": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "bitfinex": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "bitget": {
+      "exchange": "bitget",
+      "connected": true,
+      "markets_loaded": true,
+      "balance_accessible": false,
+      "order_book_accessible": true,
+      "ticker_accessible": true,
+      "error": null,
+      "market_count": 45
+    },
+    "bybit": {
+      "exchange": "bybit",
+      "connected": true,
+      "markets_loaded": true,
+      "balance_accessible": false,
+      "order_book_accessible": true,
+      "ticker_accessible": true,
+      "error": null,
+      "market_count": 2490
+    },
+    "coinbase": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "delta": {
+      "exchange": "delta",
+      "connected": true,
+      "markets_loaded": true,
+      "balance_accessible": false,
+      "order_book_accessible": true,
+      "ticker_accessible": true,
+      "error": null,
+      "market_count": 552
+    },
+    "gate": {
+      "exchange": "gate",
+      "connected": true,
+      "markets_loaded": true,
+      "balance_accessible": false,
+      "order_book_accessible": true,
+      "ticker_accessible": true,
+      "error": null,
+      "market_count": 1329
+    },
+    "huobi": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "kraken": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "kucoin": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "mexc": {
+      "status": "failed_init",
+      "error": "Initialization failed"
+    },
+    "okx": {
+      "exchange": "okx",
+      "connected": false,
+      "markets_loaded": false,
+      "balance_accessible": false,
+      "order_book_accessible": false,
+      "ticker_accessible": false,
+      "error": "okx GET https://www.okx.com/api/v5/public/instruments?instType=SPOT"
+    },
+    "poloniex": {
+      "exchange": "poloniex",
+      "connected": false,
+      "markets_loaded": false,
+      "balance_accessible": false,
+      "order_book_accessible": false,
+      "ticker_accessible": false,
+      "error": "poloniex GET https://sand-spot-api-gateway.poloniex.com/currencies?includeMultiChainCurrencies=true"
+    }
+  },
+  "stock_analysis": {
+    "ccxt_stock_support": true,
+    "supported_stock_exchanges": [
+      "alpaca"
+    ],
+    "indian_broker_status": {
+      "fyers": {
+        "api_available": true,
+        "ccxt_support": false,
+        "custom_integration_needed": true,
+        "features": [
+          "Equity",
+          "F&O",
+          "Currency",
+          "Commodity"
+        ],
+        "status": "Requires custom API integration"
+      },
+      "zerodha": {
+        "api_available": true,
+        "ccxt_support": false,
+        "custom_integration_needed": true,
+        "features": [
+          "Equity",
+          "F&O",
+          "Currency",
+          "Commodity"
+        ],
+        "status": "KiteConnect API available"
+      },
+      "upstox": {
+        "api_available": true,
+        "ccxt_support": false,
+        "custom_integration_needed": true,
+        "features": [
+          "Equity",
+          "F&O",
+          "Currency",
+          "Commodity"
+        ],
+        "status": "Upstox API 2.0 available"
+      },
+      "angel": {
+        "api_available": true,
+        "ccxt_support": false,
+        "custom_integration_needed": true,
+        "features": [
+          "Equity",
+          "F&O",
+          "Currency",
+          "Commodity"
+        ],
+        "status": "SmartAPI available"
+      }
+    },
+    "limitations": [
+      "CCXT has limited stock exchange support",
+      "Indian brokers not supported by CCXT",
+      "Custom API integration required for Indian stocks",
+      "Different authentication mechanisms needed",
+      "Regulatory compliance requirements vary by broker"
+    ],
+    "recommendations": [
+      "Implement custom adapters for Indian brokers",
+      "Use broker-specific Python SDKs (KiteConnect, Upstox API, etc.)",
+      "Create unified interface for stock trading",
+      "Implement proper error handling for broker APIs",
+      "Add support for Indian market timings and holidays"
+    ]
+  }
+}

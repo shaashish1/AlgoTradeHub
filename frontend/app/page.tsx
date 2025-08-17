@@ -5,6 +5,7 @@ import { PortfolioChart } from '@/components/dashboard/portfolio-chart'
 import { OpenPositions } from '@/components/dashboard/open-positions'
 import { ExchangeStatus } from '@/components/dashboard/exchange-status'
 import { RecentAlerts } from '@/components/dashboard/recent-alerts'
+import ImplementationStatus from '@/components/status/implementation-status'
 
 export default function Dashboard() {
   return (
@@ -40,6 +41,7 @@ export default function Dashboard() {
           <div className="space-y-6 lg:col-span-3">
             <PortfolioChart />
             <OpenPositions />
+            <ImplementationStatus />
           </div>
         </div>
       </main>
